@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# uv local install (sandbox / bootstrap only — system install is preferred)
+.uv/

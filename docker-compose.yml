@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: registration_api
+      POSTGRES_USER: registration_api
+      POSTGRES_PASSWORD: registration_api
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U registration_api -d registration_api"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+
+  app:
+    build:
+      context: .
+    profiles:
+      - app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://registration_api:registration_api@postgres:5432/registration_api
+      EMAIL_SERVICE_URL: http://email-service.invalid
+      LOG_LEVEL: info
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres-data:

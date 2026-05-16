@@ -2,7 +2,7 @@
 
 FastAPI service for **user registration** and **email-based account activation** with a time-limited numeric code. The stack targets production-style Python: **async I/O**, **dependency injection**, **Pydantic** for validation, **PostgreSQL** via **asyncpg** (no ORM), and **layered** package layout.
 
-**Status:** project scaffold is in place (uv, Ruff, ty, pre-commit, CI); the HTTP API, persistence, and Docker wiring are implemented in follow-up work.
+**Status:** project scaffold and Docker/Postgres wiring are in place; the HTTP API and business logic are implemented in follow-up work.
 
 ## Features (target)
 
@@ -19,7 +19,7 @@ See [docs/architecture.md](docs/architecture.md) for diagrams and design decisio
 - **Python 3.12** (see `.python-version` and `requires-python` in `pyproject.toml`)
 - **[uv](https://docs.astral.sh/uv/)** for environments and lockfiles
 
-### Running in containers (once `Dockerfile` / `docker-compose.yml` exist)
+### Running in containers
 
 - **Docker** and **Docker Compose** only — no local Python or Postgres install required for that path.
 
@@ -68,6 +68,22 @@ Values are loaded via **pydantic-settings** (see `src/registration/config.py` wh
 | `DEBUG` | FastAPI debug flag |
 
 Copy `.env.example` to `.env` and adjust when that file is added to the repo.
+
+## Docker
+
+Start PostgreSQL and apply the initial SQL migration:
+
+```bash
+docker compose up postgres
+```
+
+The `postgres` service mounts `migrations/001_init.sql` into Docker's standard init directory, so a fresh database is created with the required extensions, tables, constraints, and indexes.
+
+The `app` service is already defined but behind the `app` Compose profile until the FastAPI entrypoint is implemented:
+
+```bash
+docker compose --profile app up --build
+```
 
 ## API (planned)
 

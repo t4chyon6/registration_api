@@ -10,6 +10,7 @@ jobs:
     name: Detect changes
     runs-on: ubuntu-latest
     outputs:
+      docker-compose: ${{ steps.filter.outputs.docker-compose }}
       markdown: ${{ steps.filter.outputs.markdown }}
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +20,11 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
+            docker-compose:
+              - "docker-compose.yml"
+              - "Dockerfile"
+              - ".dockerignore"
+              - "migrations/**/*.sql"
             markdown:
               - "**/*.md"
 
@@ -47,7 +53,26 @@ jobs:
           uv run pre-commit run ruff-lint --all-files
           uv run pre-commit run ruff-format --all-files
           uv run pre-commit run ty --all-files
-          uv run pre-commit run docker-compose-config --all-files
+
+  docker-compose:
+    name: Docker Compose lint
+    needs:
+      - changes
+    if: needs.changes.outputs.docker-compose == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Run Docker Compose lint
+        run: uv run pre-commit run docker-compose-config --all-files
 
   markdown:
     name: Markdown lint

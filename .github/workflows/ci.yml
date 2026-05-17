@@ -33,7 +33,6 @@ jobs:
               - "tests/**"
               - "scripts/**"
               - "migrations/**/*.sql"
-              - "Dockerfile"
               - ".dockerignore"
               - "docker-compose.yml"
               - "docker/**"
@@ -41,7 +40,7 @@ jobs:
               - ".github/workflows/ci.yml"
               - ".pre-commit-config.yaml"
               - "docker-compose.yml"
-              - "Dockerfile"
+              - "docker/Dockerfile"
               - ".dockerignore"
               - "docker/**/*.json"
               - "migrations/**/*.sql"
@@ -205,6 +204,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: docker/Dockerfile
           load: true
           push: false
           tags: registration-api:ci

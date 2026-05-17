@@ -102,7 +102,7 @@ docker compose --profile app down -v --remove-orphans
 ```
 
 Optionally remove the local app image too, which forces the next build to start
-from the Dockerfile and lockfile:
+from `docker/Dockerfile` and the lockfile:
 
 ```bash
 docker image rm registration-api:ci 2>/dev/null || true

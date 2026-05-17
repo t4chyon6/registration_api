@@ -103,6 +103,24 @@ Services can instantiate repositories with either an asyncpg pool or a
 transaction-bound connection, which lets activation later wrap code consumption
 and account activation in one database transaction.
 
+## Service Layer
+
+The service layer currently contains:
+
+- `registration.services.registration.RegistrationService`: hashes a password,
+  creates a pending user, issues the first activation code, and requests email
+  delivery.
+- `registration.services.registration.ResendActivationCodeService`: verifies the
+  user's Basic Auth credentials, enforces resend cooldown/attempt limits, and
+  issues another activation code for pending users.
+- `registration.services.activation.ActivationService`: verifies Basic Auth
+  credentials, validates the latest unused activation code, marks the code as
+  used, and activates the user inside one transaction.
+
+Services depend on protocols rather than concrete repositories or email
+adapters. This keeps application rules testable with fakes while allowing the
+API layer to inject real asyncpg repositories and infrastructure adapters later.
+
 ## Activation Code Lifecycle
 
 ```mermaid

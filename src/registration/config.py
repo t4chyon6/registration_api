@@ -36,7 +36,11 @@ class Settings(BaseSettings):
     email_service_max_retries: PositiveInt = 3
     email_service_retry_max_wait: float = Field(default=10.0, ge=0.0)
 
-    bcrypt_rounds: int = Field(default=12, ge=4, le=31)
+    argon2_memory_cost: int = Field(default=65536, ge=8)
+    argon2_time_cost: PositiveInt = 3
+    argon2_parallelism: PositiveInt = 4
+    argon2_hash_len: int = Field(default=32, ge=16)
+    argon2_salt_len: int = Field(default=16, ge=16)
     max_resend_attempts: PositiveInt = 5
     resend_cooldown_seconds: int = Field(default=60, ge=0)
 

@@ -61,7 +61,8 @@ Values are loaded via **pydantic-settings** (see `src/registration/config.py`):
 | `EMAIL_SERVICE_TIMEOUT` | Per-request timeout (seconds) |
 | `EMAIL_SERVICE_MAX_RETRIES` | **tenacity** retry cap |
 | `EMAIL_SERVICE_RETRY_MAX_WAIT` | Max wait between retries (seconds) |
-| `BCRYPT_ROUNDS` | bcrypt cost (lower in tests for speed) |
+| `ARGON2_MEMORY_COST` / `ARGON2_TIME_COST` / `ARGON2_PARALLELISM` | Argon2id work factors (lower in tests for speed) |
+| `ARGON2_HASH_LEN` / `ARGON2_SALT_LEN` | Argon2id output and salt lengths |
 | `MAX_RESEND_ATTEMPTS` | Cap on activation codes issued per user |
 | `RESEND_COOLDOWN_SECONDS` | Minimum delay between resend requests |
 | `LOG_LEVEL` | Logging level |

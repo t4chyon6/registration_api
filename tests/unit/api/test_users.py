@@ -126,6 +126,23 @@ async def test_register_user_returns_created_user(
     assert service.calls == [("user@example.com", "password123")]
 
 
+async def test_register_user_accepts_long_password_within_schema_limit(
+    app: FastAPI,
+    client: httpx.AsyncClient,
+) -> None:
+    service = _RegistrationService()
+    app.dependency_overrides[dependencies.get_registration_service] = lambda: service
+    long_password = "p" * 100
+
+    response = await client.post(
+        "/v1/users",
+        json={"email": "user@example.com", "password": long_password},
+    )
+
+    assert response.status_code == 201
+    assert service.calls == [("user@example.com", long_password)]
+
+
 async def test_register_user_maps_duplicate_email(
     app: FastAPI,
     client: httpx.AsyncClient,
@@ -208,6 +225,31 @@ async def test_activate_user_passes_basic_auth_and_code(
             UUID("11111111-1111-1111-1111-111111111111"),
             "user@example.com",
             "secret",
+            "1234",
+        ),
+    ]
+
+
+async def test_activate_user_accepts_long_basic_auth_password(
+    app: FastAPI,
+    client: httpx.AsyncClient,
+) -> None:
+    service = _ActivationService()
+    app.dependency_overrides[dependencies.get_activation_service] = lambda: service
+    long_password = "p" * 100
+
+    response = await client.post(
+        "/v1/users/11111111-1111-1111-1111-111111111111/activate",
+        headers={"Authorization": _basic_auth(password=long_password)},
+        json={"code": "1234"},
+    )
+
+    assert response.status_code == 200
+    assert service.calls == [
+        (
+            UUID("11111111-1111-1111-1111-111111111111"),
+            "user@example.com",
+            long_password,
             "1234",
         ),
     ]

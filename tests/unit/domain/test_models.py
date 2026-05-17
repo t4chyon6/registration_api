@@ -19,7 +19,7 @@ def _user(
     return models.User(
         id=uuid4(),
         email="user@example.com",
-        password_hash="not-a-secret-test-hash",  # noqa: S106
+        password_hash="not-a-secret-test-hash",
         is_active=is_active,
         created_at=_now(),
         activated_at=activated_at,

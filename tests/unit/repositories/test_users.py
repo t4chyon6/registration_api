@@ -60,7 +60,7 @@ async def test_create_user_inserts_pending_user() -> None:
 
     user = await repository.create_user(
         email="user@example.com",
-        password_hash="not-a-secret-test-hash",  # noqa: S106
+        password_hash="not-a-secret-test-hash",
     )
 
     query, args = executor.fetchrow_calls[0]
@@ -70,6 +70,15 @@ async def test_create_user_inserts_pending_user() -> None:
     assert user.status is models.UserStatus.PENDING
 
 
+async def test_user_repository_uses_constructor_executor() -> None:
+    executor = _FakeExecutor(fetchrow_result=None)
+    repository = users.UserRepository(executor)
+
+    await repository.get_by_email("user@example.com")
+
+    assert len(executor.fetchrow_calls) == 1
+
+
 async def test_create_user_converts_unique_violation_to_domain_error() -> None:
     executor = _FakeExecutor(fetchrow_error=asyncpg.UniqueViolationError())
     repository = users.UserRepository(executor)
@@ -77,7 +86,7 @@ async def test_create_user_converts_unique_violation_to_domain_error() -> None:
     with pytest.raises(exceptions.EmailAlreadyExistsError):
         await repository.create_user(
             email="user@example.com",
-            password_hash="not-a-secret-test-hash",  # noqa: S106
+            password_hash="not-a-secret-test-hash",
         )
 
 

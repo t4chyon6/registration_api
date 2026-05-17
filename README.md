@@ -113,7 +113,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on push and pull requests:
 
 ## Repository layout
 
-```
+```text
 src/registration/   application package (API, services, repositories, infrastructure)
 tests/             unit and integration tests
 migrations/        SQL migrations (PostgreSQL)

@@ -22,3 +22,11 @@ repos:
         types: [python]
         pass_filenames: false
         require_serial: true
+
+      - id: docker-compose-config
+        name: docker compose config
+        entry: bash -c 'docker compose config >/dev/null || docker-compose config >/dev/null'
+        language: system
+        pass_filenames: false
+        files: ^(docker-compose\.yml|Dockerfile|\.dockerignore|migrations/.*\.sql)$
+        require_serial: true

@@ -13,6 +13,7 @@ jobs:
     name: Detect changes
     runs-on: ubuntu-latest
     outputs:
+      code: ${{ steps.filter.outputs.code }}
       docker-compose: ${{ steps.filter.outputs.docker-compose }}
       markdown: ${{ steps.filter.outputs.markdown }}
     steps:
@@ -23,7 +24,22 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
+            code:
+              - ".github/workflows/ci.yml"
+              - ".pre-commit-config.yaml"
+              - "pyproject.toml"
+              - "uv.lock"
+              - "src/**"
+              - "tests/**"
+              - "scripts/**"
+              - "migrations/**/*.sql"
+              - "Dockerfile"
+              - ".dockerignore"
+              - "docker-compose.yml"
+              - "docker/**"
             docker-compose:
+              - ".github/workflows/ci.yml"
+              - ".pre-commit-config.yaml"
               - "docker-compose.yml"
               - "Dockerfile"
               - ".dockerignore"
@@ -34,6 +50,9 @@ jobs:
 
   lint:
     name: Lint
+    needs:
+      - changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -163,8 +182,9 @@ jobs:
 
   docker:
     name: Docker build and E2E
-    if: always() && needs.lint.result == 'success' && needs.unit-test.result == 'success' && needs.integration-test.result == 'success' && !contains(fromJSON('["failure", "cancelled"]'), needs.docker-compose.result)
+    if: always() && needs.changes.outputs.code == 'true' && needs.lint.result == 'success' && needs.unit-test.result == 'success' && needs.integration-test.result == 'success' && !contains(fromJSON('["failure", "cancelled"]'), needs.docker-compose.result)
     needs:
+      - changes
       - lint
       - unit-test
       - integration-test

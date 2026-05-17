@@ -59,7 +59,9 @@ def _e2e_env() -> dict[str, str]:
     env = os.environ.copy()
     env.update(
         {
-            "BCRYPT_ROUNDS": "4",
+            "ARGON2_MEMORY_COST": "1024",
+            "ARGON2_TIME_COST": "1",
+            "ARGON2_PARALLELISM": "1",
             "EMAIL_SERVICE_MAX_RETRIES": "1",
             "EMAIL_SERVICE_RETRY_MAX_WAIT": "0.0",
             "MAX_RESEND_ATTEMPTS": "5",

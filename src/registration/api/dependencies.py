@@ -50,7 +50,13 @@ def get_clock() -> Callable[[], datetime]:
 
 def get_password_hasher(settings: SettingsDep) -> passwords.PasswordHasher:
     """Return a password hasher configured from settings."""
-    return passwords.PasswordHasher(settings.bcrypt_rounds)
+    return passwords.PasswordHasher(
+        memory_cost=settings.argon2_memory_cost,
+        time_cost=settings.argon2_time_cost,
+        parallelism=settings.argon2_parallelism,
+        hash_len=settings.argon2_hash_len,
+        salt_len=settings.argon2_salt_len,
+    )
 
 
 def get_user_repository(pool: PoolDep) -> users.UserRepository:

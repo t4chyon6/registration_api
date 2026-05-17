@@ -30,3 +30,10 @@ repos:
         pass_filenames: false
         files: ^(docker-compose\.yml|Dockerfile|\.dockerignore|migrations/.*\.sql)$
         require_serial: true
+
+      - id: pymarkdown
+        name: pymarkdown
+        entry: pymarkdown --config .pymarkdown.json scan
+        language: system
+        types: [markdown]
+        require_serial: false

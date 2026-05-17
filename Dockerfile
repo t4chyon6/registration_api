@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
 
-WORKDIR /build
+WORKDIR /app
 
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
@@ -24,9 +24,9 @@ WORKDIR /app
 RUN groupadd --system registration \
     && useradd --system --gid registration --home-dir /app registration
 
-COPY --from=builder --chown=registration:registration /build/.venv ./.venv
-COPY --from=builder --chown=registration:registration /build/src ./src
-COPY --from=builder --chown=registration:registration /build/pyproject.toml ./pyproject.toml
+COPY --from=builder --chown=registration:registration /app/.venv ./.venv
+COPY --from=builder --chown=registration:registration /app/src ./src
+COPY --from=builder --chown=registration:registration /app/pyproject.toml ./pyproject.toml
 
 USER registration
 

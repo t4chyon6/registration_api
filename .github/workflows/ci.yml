@@ -172,7 +172,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          load: true
           push: false
           tags: registration-api:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Smoke test runtime command
+        run: docker run --rm registration-api:ci uvicorn --version

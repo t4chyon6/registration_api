@@ -94,8 +94,10 @@ jobs:
       - name: Run Markdown lint
         run: uv run pre-commit run pymarkdown --all-files
 
-  test:
-    name: Test
+  unit-test:
+    name: Unit test
+    needs:
+      - lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -108,8 +110,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Run tests
-        run: uv run pytest -x --cov=src --cov-report=xml
+      - name: Run unit tests
+        run: uv run pytest tests/unit -x --cov=src --cov-report=xml
         env:
           # Override settings for CI test environment
           BCRYPT_ROUNDS: "4"
@@ -125,11 +127,40 @@ jobs:
           path: coverage.xml
           retention-days: 7
 
-  docker:
-    name: Docker build
+  integration-test:
+    name: Integration test
     needs:
       - lint
-      - test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Run integration tests
+        run: uv run pytest tests/integration -x
+        env:
+          # Override settings for CI test environment
+          BCRYPT_ROUNDS: "4"
+          EMAIL_SERVICE_MAX_RETRIES: "1"
+          EMAIL_SERVICE_RETRY_MAX_WAIT: "0.0"
+          MAX_RESEND_ATTEMPTS: "2"
+          RESEND_COOLDOWN_SECONDS: "0"
+
+  docker:
+    name: Docker build
+    if: always() && needs.lint.result == 'success' && needs.unit-test.result == 'success' && needs.integration-test.result == 'success' && !contains(fromJSON('["failure", "cancelled"]'), needs.docker-compose.result)
+    needs:
+      - lint
+      - unit-test
+      - integration-test
+      - docker-compose
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

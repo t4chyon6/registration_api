@@ -50,6 +50,17 @@ services:
       MAX_RESEND_ATTEMPTS: ${MAX_RESEND_ATTEMPTS:-5}
       RESEND_COOLDOWN_SECONDS: ${RESEND_COOLDOWN_SECONDS:-60}
       LOG_LEVEL: info
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/openapi.json', timeout=2).read()",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
     ports:
       - "8000:8000"
 

@@ -7,7 +7,6 @@ import os
 import shutil
 import subprocess
 import sys
-import time
 from http import HTTPStatus
 from typing import Final
 
@@ -99,24 +98,30 @@ def _run_without_check(args: list[str]) -> str:
     return f"{completed.stdout}{completed.stderr}"
 
 
+def _compose_up(env: dict[str, str]) -> None:
+    try:
+        _run([*_compose(), "up", "-d", "--wait", "--no-build"], env=env)
+    except SystemExit:
+        sys.stderr.write(_run_without_check([*_compose(), "logs"]))
+        raise
+
+
 def _cleanup() -> None:
     _run_without_check([*_compose(), "down", "-v", "--remove-orphans"])
 
 
-def _wait_for_api(client: _ApiClient) -> None:
-    for _ in range(60):
-        try:
-            response = client.request("GET", "/openapi.json")
-        except httpx.HTTPError:
-            time.sleep(1)
-            continue
+def _assert_api_ready(client: _ApiClient) -> None:
+    try:
+        response = client.request("GET", "/openapi.json")
+    except httpx.HTTPError as exc:
+        sys.stderr.write(_run_without_check([*_compose(), "logs"]))
+        message = f"API readiness check failed: {exc}"
+        raise SystemExit(message) from exc
 
-        if response.status_code == HTTPStatus.OK:
-            return
-        time.sleep(1)
-
+    if response.status_code == HTTPStatus.OK:
+        return
     sys.stderr.write(_run_without_check([*_compose(), "logs"]))
-    message = "API did not become ready"
+    message = f"API readiness check returned HTTP {response.status_code}"
     raise SystemExit(message)
 
 
@@ -305,8 +310,8 @@ def main() -> None:
 
     _cleanup()
     try:
-        _run([*_compose(), "up", "-d", "--no-build"], env=env)
-        _wait_for_api(client)
+        _compose_up(env)
+        _assert_api_ready(client)
 
         _exercise_primary_user_flow(client)
         _exercise_expired_activation_code(client)

@@ -71,6 +71,37 @@ The email adapter is deliberately isolated from services. Business code should
 depend on a service/port abstraction in later phases, while this adapter owns
 transport details such as URLs, timeouts, status handling, and retry policy.
 
+## Domain Layer
+
+The domain layer currently contains:
+
+- `registration.domain.models.User`: an immutable Pydantic model for registered
+  user accounts with a derived `status` property.
+- `registration.domain.models.ActivationCode`: an immutable Pydantic model for
+  issued activation codes, including code-format, timestamp, expiry, usage, and
+  matching predicates.
+- `registration.domain.exceptions`: anticipated workflow failures, grouped under
+  `RegistrationError`, ready for service-layer handling and later HTTP exception
+  mapping.
+
+The models are intentionally small and behavior-focused. They encode invariants
+that are true regardless of storage or transport, such as "active users have an
+activation timestamp" and "activation codes expire after creation."
+
+## Activation Code Lifecycle
+
+```mermaid
+flowchart LR
+    Issued["Issued"]
+    Usable["Usable"]
+    Used["Used"]
+    Expired["Expired"]
+
+    Issued --> Usable
+    Usable -->|"submitted correctly before expiry"| Used
+    Usable -->|"current time reaches expires_at"| Expired
+```
+
 ## Configuration Flow
 
 ```mermaid

@@ -88,6 +88,21 @@ The models are intentionally small and behavior-focused. They encode invariants
 that are true regardless of storage or transport, such as "active users have an
 activation timestamp" and "activation codes expire after creation."
 
+## Repository Layer
+
+The repository layer currently contains:
+
+- `registration.repositories.users.UserRepository`: raw SQL access for users and
+  account state.
+- `registration.repositories.activation_codes.ActivationCodeRepository`: raw SQL
+  access for activation-code lifecycle operations.
+
+Repositories map asyncpg rows into immutable domain models at the persistence
+boundary. This keeps SQL details out of services while still avoiding an ORM.
+Services can instantiate repositories with either an asyncpg pool or a
+transaction-bound connection, which lets activation later wrap code consumption
+and account activation in one database transaction.
+
 ## Activation Code Lifecycle
 
 ```mermaid

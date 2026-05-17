@@ -30,6 +30,7 @@ services:
     image: registration-api:ci
     build:
       context: .
+      dockerfile: docker/Dockerfile
     profiles:
       - app
     depends_on:

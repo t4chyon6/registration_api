@@ -28,7 +28,7 @@ repos:
         entry: bash -c 'docker compose config >/dev/null || docker-compose config >/dev/null'
         language: system
         pass_filenames: false
-        files: ^(docker-compose\.yml|Dockerfile|\.dockerignore|migrations/.*\.sql)$
+        files: ^(docker-compose\.yml|docker/Dockerfile|\.dockerignore|migrations/.*\.sql)$
         require_serial: true
 
       - id: pymarkdown

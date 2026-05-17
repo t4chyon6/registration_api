@@ -38,4 +38,4 @@ without constructing real network or database resources.
 
 The lifespan is the ownership boundary for the asyncpg pool and HTTP email
 client, which keeps startup/shutdown behavior explicit for local runs, Docker,
-and future integration tests.
+and integration tests.

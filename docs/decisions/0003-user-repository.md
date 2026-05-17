@@ -41,5 +41,5 @@ explicit transaction connection. Activation opens one transaction, instantiates
 `UserRepository` and `ActivationCodeRepository` with the same connection, loads
 the latest unused code, marks it used, and activates the user.
 
-Repository unit tests use lightweight async fakes. Real PostgreSQL coverage is
-deferred to integration tests.
+Repository unit tests use lightweight async fakes. Integration tests cover the
+same repository classes against PostgreSQL with the real SQL schema.

@@ -1,9 +1,9 @@
 # Registration API Architecture
 
-This document records the application shape as it is built incrementally. The
-implementation follows a layered architecture: HTTP code translates requests,
-services hold application use cases, repositories isolate SQL, and
-infrastructure adapters own third-party concerns.
+This document records the application shape. The implementation follows a
+layered architecture: HTTP code translates requests, services hold application
+use cases, repositories isolate SQL, and infrastructure adapters own third-party
+concerns.
 
 ## Current System View
 
@@ -37,6 +37,7 @@ flowchart TD
         Settings["Settings"]
         DatabasePool["asyncpg Pool"]
         EmailService["Email Service"]
+        PasswordHasher["Argon2id Password Hasher"]
         TransactionFactory["Activation Transaction Factory"]
     end
 
@@ -53,6 +54,9 @@ flowchart TD
     ActivationService --> ActivationCodeRepository
     RegistrationService --> EmailService
     ResendService --> EmailService
+    RegistrationService --> PasswordHasher
+    ResendService --> PasswordHasher
+    ActivationService --> PasswordHasher
     UserRepository --> DatabasePool
     ActivationCodeRepository --> DatabasePool
     ActivationService --> TransactionFactory
@@ -74,6 +78,9 @@ The infrastructure layer contains:
   context manager for startup/shutdown.
 - `registration.infrastructure.email.EmailService`: an HTTP adapter for the
   third-party email service using `httpx` and bounded retries with `tenacity`.
+- `registration.services.passwords.PasswordHasher`: Argon2id password hashing
+  and verification, configured from `ARGON2_*` settings and run off the event
+  loop.
 
 The email adapter is deliberately isolated from services. Business code depends
 on a service/port abstraction, while this adapter owns transport details such as
@@ -131,9 +138,9 @@ transaction while consuming a code and activating the user.
 
 The service layer contains:
 
-- `registration.services.registration.RegistrationService`: hashes a password,
-  creates a pending user, issues the first activation code, and requests email
-  delivery.
+- `registration.services.registration.RegistrationService`: hashes a password
+  with Argon2id, creates a pending user, issues the first activation code, and
+  requests email delivery.
 - `registration.services.registration.ResendActivationCodeService`: verifies the
   user's Basic Auth credentials, enforces resend cooldown/attempt limits, and
   issues another activation code for pending users.
@@ -178,6 +185,67 @@ flowchart LR
 Settings are loaded through `get_settings()` and injected into dependency
 factories. This keeps application code testable because tests can construct
 `Settings` directly or override FastAPI dependencies.
+
+## Test Strategy
+
+```mermaid
+flowchart TD
+    UnitTests["Unit Tests"]
+    ApiOverrides["FastAPI Dependency Overrides"]
+    ServiceFakes["Service and Repository Fakes"]
+    IntegrationTests["Integration Tests"]
+    Testcontainers["testcontainers PostgreSQL"]
+    Migration["migrations/001_init.sql"]
+    Rollback["Per-Test Transaction Rollback"]
+    E2E["Docker Compose E2E"]
+    MockServer["MockServer Email Stub"]
+
+    UnitTests --> ApiOverrides
+    UnitTests --> ServiceFakes
+    IntegrationTests --> Testcontainers
+    Testcontainers --> Migration
+    IntegrationTests --> Rollback
+    E2E --> MockServer
+    E2E --> Migration
+```
+
+Unit tests keep feedback fast by replacing service dependencies with fakes,
+using reduced Argon2id work factors, and overriding FastAPI dependencies.
+Integration tests exercise the raw SQL repositories against PostgreSQL with the
+real schema, while rolling back each test's transaction to keep cases isolated.
+Docker Compose E2E checks use the built API image, start PostgreSQL, the app,
+and the MockServer email stub, then exercise the registration and activation
+flows through HTTP.
+
+## CI Flow
+
+```mermaid
+flowchart TD
+    Changes["Detect changes"]
+    Lint["Lint"]
+    Unit["Unit test"]
+    Integration["Integration test"]
+    Compose["Docker Compose lint"]
+    Markdown["Markdown lint"]
+    Docker["Docker build and E2E"]
+
+    Changes --> Compose
+    Changes --> Markdown
+    Lint --> Unit
+    Lint --> Integration
+    Lint --> Docker
+    Unit --> Docker
+    Integration --> Docker
+    Compose --> Docker
+```
+
+`Docker Compose lint` and `Markdown lint` are conditional jobs. `Docker build and
+E2E` builds the `registration-api:ci` image, smoke-tests the runtime command,
+and runs the Compose E2E script with that image. The E2E script starts Compose
+with `--wait --no-build`, so it relies on service health checks and the CI-built
+image. It waits for lint, unit tests, integration tests, and Docker Compose lint;
+skipped Docker Compose lint does not block the build. The workflow opts
+JavaScript GitHub Actions into Node 24 with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`.
 
 ## Decisions
 

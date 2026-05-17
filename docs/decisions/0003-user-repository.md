@@ -21,7 +21,7 @@ Create raw SQL repositories backed by objects that implement asyncpg-style
 
 The repository itself remains a plain Python object. Pydantic is used for data
 objects that need validation and serialization, such as `User`, `ActivationCode`,
-settings, and future API schemas. A repository is a behaviorful adapter around a
+settings, and API schemas. A repository is a behaviorful adapter around a
 live dependency, not data, so making it a Pydantic model would add little value
 and make dependency injection less direct.
 
@@ -37,10 +37,9 @@ domain exception hierarchy.
 ## Consequences
 
 Services can use the same repository classes with either an asyncpg pool or an
-explicit transaction connection. That keeps the future activation flow
-straightforward: open one transaction, instantiate `UserRepository` and
-`ActivationCodeRepository` with the same connection, load the latest unused code,
-mark it used, and activate the user.
+explicit transaction connection. Activation opens one transaction, instantiates
+`UserRepository` and `ActivationCodeRepository` with the same connection, loads
+the latest unused code, marks it used, and activates the user.
 
 Repository unit tests use lightweight async fakes. Real PostgreSQL coverage is
-deferred to integration tests once the service/API layer exists.
+deferred to integration tests.

@@ -16,7 +16,18 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
 
+  email-service:
+    image: mockserver/mockserver:latest
+    environment:
+      MOCKSERVER_INITIALIZATION_JSON_PATH: /config/activation-codes.json
+      MOCKSERVER_LOG_LEVEL: INFO
+    ports:
+      - "1080:1080"
+    volumes:
+      - ./docker/mockserver/activation-codes.json:/config/activation-codes.json:ro
+
   app:
+    image: registration-api:ci
     build:
       context: .
     profiles:
@@ -24,9 +35,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      email-service:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://registration_api:registration_api@postgres:5432/registration_api
-      EMAIL_SERVICE_URL: http://email-service.invalid
+      EMAIL_SERVICE_URL: http://email-service:1080
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      EMAIL_SERVICE_MAX_RETRIES: ${EMAIL_SERVICE_MAX_RETRIES:-3}
+      EMAIL_SERVICE_RETRY_MAX_WAIT: ${EMAIL_SERVICE_RETRY_MAX_WAIT:-10.0}
+      MAX_RESEND_ATTEMPTS: ${MAX_RESEND_ATTEMPTS:-5}
+      RESEND_COOLDOWN_SECONDS: ${RESEND_COOLDOWN_SECONDS:-60}
       LOG_LEVEL: info
     ports:
       - "8000:8000"

@@ -13,6 +13,7 @@ dependencies = [
     "tenacity>=9.1",
     "passlib[bcrypt]>=1.7",
     "httpx>=0.28",
+    "bcrypt>=4,<4.1",
 ]
 
 [build-system]

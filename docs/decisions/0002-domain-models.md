@@ -27,8 +27,8 @@ Represent anticipated workflow failures as explicit exception classes under
 ## Consequences
 
 Services can express business behavior in terms of immutable domain objects and
-specific anticipated failures. The future API layer can map these exceptions to
-HTTP responses without putting application logic in route handlers.
+specific anticipated failures. The API layer maps these exceptions to HTTP
+responses without putting application logic in route handlers.
 
 The repository layer will convert asyncpg rows into domain models. Any invalid
 database row will fail model validation at that boundary instead of leaking

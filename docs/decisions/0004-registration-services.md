@@ -32,9 +32,9 @@ activate the account.
 
 ## Consequences
 
-The future FastAPI layer can stay thin: parse transport input, inject service
+The FastAPI layer can stay thin: parse transport input, inject service
 dependencies, call a service, and map domain exceptions to HTTP responses.
 
 The transaction boundary is explicit and unit-testable. The concrete asyncpg
-transaction adapter can be wired later without changing activation business
-logic.
+transaction adapter is wired through FastAPI dependencies without changing
+activation business logic.

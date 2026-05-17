@@ -17,8 +17,8 @@ Use `pydantic-settings` for runtime configuration and expose it through
 `registration.config.Settings`.
 
 Use a small asyncpg adapter in `registration.infrastructure.database` to create
-and close the connection pool. The FastAPI lifespan will own this pool in a
-later phase.
+and close the connection pool. The FastAPI lifespan owns this pool for the
+process lifetime.
 
 Use `registration.infrastructure.email.EmailService` as the HTTP adapter for the
 third-party email service. It uses:

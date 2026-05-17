@@ -2,15 +2,15 @@
 
 FastAPI service for **user registration** and **email-based account activation** with a time-limited numeric code. The stack targets production-style Python: **async I/O**, **dependency injection**, **Pydantic** for validation, **PostgreSQL** via **asyncpg** (no ORM), and **layered** package layout.
 
-**Status:** project scaffold and Docker/Postgres wiring are in place; the HTTP API and business logic are implemented in follow-up work.
+**Status:** core registration, activation, service, repository, infrastructure, and HTTP API layers are in place. The remaining planned work is focused on broader API/integration test coverage and final runbook polish.
 
-## Features (target)
+## Features
 
 - Register with email and password; issue a **4-digit** activation code and send it through an **unreliable HTTP email API** client (retries via **tenacity**).
 - Activate the account with **HTTP Basic** auth (email + password) and the code; activation and code consumption run in a **database transaction**; codes expire after a configurable TTL.
 - **Resend** activation codes with Basic auth, subject to cooldown and a maximum number of codes per user.
 
-See [docs/architecture.md](docs/architecture.md) for diagrams and design decisions (added with the implementation).
+See [docs/architecture.md](docs/architecture.md) for diagrams and design decisions.
 
 ## Requirements
 
@@ -50,7 +50,7 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
 ## Configuration (environment variables)
 
-Values are loaded via **pydantic-settings** (see `src/registration/config.py` when present). Planned variables:
+Values are loaded via **pydantic-settings** (see `src/registration/config.py`):
 
 | Variable | Purpose |
 | -------- | ------- |
@@ -67,7 +67,10 @@ Values are loaded via **pydantic-settings** (see `src/registration/config.py` wh
 | `LOG_LEVEL` | Logging level |
 | `DEBUG` | FastAPI debug flag |
 
-Copy `.env.example` to `.env` and adjust when that file is added to the repo.
+For local shell runs, provide these variables in the environment or an ignored
+`.env` file. Docker Compose supplies database and email-service defaults for the
+`app` profile; override `EMAIL_SERVICE_URL` with a reachable email stub when
+testing successful email delivery.
 
 ## Docker
 
@@ -79,13 +82,15 @@ docker compose up postgres
 
 The `postgres` service mounts `migrations/001_init.sql` into Docker's standard init directory, so a fresh database is created with the required extensions, tables, constraints, and indexes.
 
-The `app` service is already defined but behind the `app` Compose profile until the FastAPI entrypoint is implemented:
+Run the API together with PostgreSQL:
 
 ```bash
 docker compose --profile app up --build
 ```
 
-## API (planned)
+The API listens on `http://localhost:8000` in the Compose setup.
+
+## API
 
 | Method | Path | Description |
 | ------ | ---- | ----------- |
@@ -108,8 +113,11 @@ uv run pre-commit run --all-files
 
 GitHub Actions (`.github/workflows/ci.yml`) runs on push and pull requests:
 
-1. **Lint** — `uv sync --frozen --dev` then `pre-commit run --all-files` (Ruff + ty).
-2. **Test** — `uv sync --frozen --dev` then `pytest` with coverage (uses Docker on the runner for **testcontainers**).
+1. **Lint** — Ruff and `ty` through pre-commit.
+2. **Test** — `pytest` with coverage and faster test-specific environment overrides.
+3. **Docker build** — validates the image after lint and tests pass.
+4. **Docker Compose lint** — conditional on Docker/migration file changes.
+5. **Markdown lint** — conditional on Markdown file changes.
 
 ## Repository layout
 

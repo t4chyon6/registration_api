@@ -70,6 +70,7 @@ class ResendActivationCodeService:
     async def resend_activation_code(
         self,
         *,
+        user_id: UUID,
         email: str,
         password: str,
     ) -> None:
@@ -80,6 +81,8 @@ class ResendActivationCodeService:
             email=email,
             password=password,
         )
+        if user.id != user_id:
+            raise exceptions.InvalidCredentialsError
         if user.is_active:
             raise exceptions.UserAlreadyActiveError
 

@@ -56,7 +56,11 @@ async def test_resend_activation_code_authenticates_and_issues_code() -> None:
         ),
     )
 
-    await service.resend_activation_code(email=existing_user.email, password="secret")
+    await service.resend_activation_code(
+        user_id=existing_user.id,
+        email=existing_user.email,
+        password="secret",
+    )
 
     assert code_repository.created_codes == [
         (
@@ -83,6 +87,7 @@ async def test_resend_activation_code_rejects_bad_credentials() -> None:
 
     with pytest.raises(exceptions.InvalidCredentialsError):
         await service.resend_activation_code(
+            user_id=fakes.user().id,
             email="missing@example.com",
             password="secret",
         )
@@ -104,6 +109,7 @@ async def test_resend_activation_code_rejects_active_user() -> None:
 
     with pytest.raises(exceptions.UserAlreadyActiveError):
         await service.resend_activation_code(
+            user_id=existing_user.id,
             email=existing_user.email,
             password="secret",
         )
@@ -127,6 +133,7 @@ async def test_resend_activation_code_enforces_attempt_cap() -> None:
 
     with pytest.raises(exceptions.TooManyActivationCodeRequestsError):
         await service.resend_activation_code(
+            user_id=existing_user.id,
             email=existing_user.email,
             password="secret",
         )
@@ -156,8 +163,31 @@ async def test_resend_activation_code_enforces_cooldown() -> None:
 
     with pytest.raises(exceptions.ResendCooldownNotElapsedError) as exc_info:
         await service.resend_activation_code(
+            user_id=existing_user.id,
             email=existing_user.email,
             password="secret",
         )
 
     assert exc_info.value.remaining == timedelta(seconds=30)
+
+
+async def test_resend_activation_code_rejects_mismatched_user_id() -> None:
+    existing_user = fakes.user(password_hash="hashed:secret")
+    service = registration.ResendActivationCodeService(
+        registration.ActivationCodeIssueDependencies(
+            settings=fakes.settings(),
+            user_repository=fakes.FakeUserRepository(existing_user=existing_user),
+            activation_code_repository=fakes.FakeActivationCodeRepository(),
+            email_service=fakes.FakeEmailService(),
+            password_hasher=fakes.FakePasswordHasher(),
+            clock=fakes.now,
+            code_generator=lambda: "5678",
+        ),
+    )
+
+    with pytest.raises(exceptions.InvalidCredentialsError):
+        await service.resend_activation_code(
+            user_id=fakes.user().id,
+            email=existing_user.email,
+            password="secret",
+        )
